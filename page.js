@@ -1,63 +1,79 @@
-import { headers } from 'next/headers';
-import { notFound } from 'next/navigation';
-import { getCaseById, clearanceLabel, displayStatus } from '@/lib/db';
-import CopyLinkButton from '@/components/CopyLinkButton';
-import StatusStamp from '@/components/StatusStamp';
+import Link from 'next/link';
+import { getCases } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
-export default async function CaseDetailPage({ params }) {
-  const c = await getCaseById(params.id);
-  if (!c) notFound();
-
-  const headersList = headers();
-  const host = headersList.get('host');
-  const protocol = host?.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
+export default async function DashboardPage() {
+  const cases = await getCases();
 
   return (
     <div>
-      <p className="font-display text-3xl text-ink">{c.nama_karyawan}</p>
-      <p className="text-sm text-steel mt-1">
-        {c.posisi} · Efektif terakhir {new Date(c.tanggal_efektif).toLocaleDateString('id-ID')}
-      </p>
-
-      <div className="grid md:grid-cols-2 gap-6 mt-8">
-        <div className="bg-white border border-line rounded-2xl p-6">
-          <p className="text-sm font-medium text-ink mb-2">Progres Clearance</p>
-          <div className="divide-y divide-line">
-            {c.clearances.map((cl) => (
-              <StatusStamp
-                key={cl.id}
-                label={clearanceLabel(cl.jenis)}
-                status={displayStatus(cl)}
-                catatan={cl.catatan}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white border border-line rounded-2xl p-6">
-          <p className="text-sm font-medium text-ink mb-1">Bagikan Link ke Tiap Pihak</p>
-          <p className="text-xs text-steel mb-4">
-            Kirim link berikut ke masing-masing pihak lewat WA/email supaya mereka bisa update
-            status sendiri, tanpa perlu login.
-          </p>
-          <div className="space-y-3">
-            {c.clearances.map((cl) => (
-              <div
-                key={cl.id}
-                className="flex items-center justify-between border border-line rounded-lg px-3 py-2.5"
-              >
-                <p className="text-sm text-ink">{clearanceLabel(cl.jenis)}</p>
-                <CopyLinkButton url={`${baseUrl}/update/${cl.token}`} />
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="mb-8">
+        <p className="font-display text-3xl text-ink">Daftar Kasus Resign</p>
+        <p className="text-sm text-steel mt-1">
+          Pantau progres clearance tiap karyawan yang mengajukan resign.
+        </p>
+        <p className="text-xs text-steel/60 mt-2 font-mono">
+          [debug] dimuat: {new Date().toISOString()} · {cases.length} kasus ditemukan di database
+        </p>
       </div>
+
+      {cases.length === 0 ? (
+        <div className="border border-dashed border-line rounded-2xl p-10 text-center bg-white">
+          <p className="text-steel">Belum ada kasus resign yang tercatat.</p>
+          <Link href="/new" className="inline-block mt-4 text-sm font-medium underline text-ink">
+            Tambah kasus resign pertama
+          </Link>
+        </div>
+      ) : (
+        <div className="bg-white border border-line rounded-2xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line text-left text-steel">
+                <th className="px-5 py-3 font-medium">Karyawan</th>
+                <th className="px-5 py-3 font-medium">Posisi</th>
+                <th className="px-5 py-3 font-medium">Efektif Terakhir</th>
+                <th className="px-5 py-3 font-medium">Progres</th>
+                <th className="px-5 py-3 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cases.map((c) => (
+                <tr
+                  key={c.id}
+                  className="border-b border-line last:border-0 hover:bg-paper transition"
+                >
+                  <td className="px-5 py-4">
+                    <Link href={`/case/${c.id}`} className="font-medium text-ink hover:underline">
+                      {c.nama_karyawan}
+                    </Link>
+                  </td>
+                  <td className="px-5 py-4 text-steel">{c.posisi}</td>
+                  <td className="px-5 py-4 text-steel">
+                    {new Date(c.tanggal_efektif).toLocaleDateString('id-ID')}
+                  </td>
+                  <td className="px-5 py-4 text-steel">
+                    {c.selesai}/{c.total} selesai
+                  </td>
+                  <td className="px-5 py-4">
+                    <span
+                      className={`text-xs font-medium px-3 py-1 rounded-full ${
+                        c.overallDone
+                          ? 'bg-brass/15 text-brass'
+                          : 'bg-steel/15 text-steel'
+                      }`}
+                    >
+                      {c.overallDone ? 'Selesai' : 'Proses Berjalan'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
