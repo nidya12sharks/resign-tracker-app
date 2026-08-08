@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getCases } from '@/lib/db';
+import DeleteCaseButton from '@/components/DeleteCaseButton';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,9 +15,6 @@ export default async function DashboardPage() {
         <p className="font-display text-3xl text-ink">Daftar Kasus Resign</p>
         <p className="text-sm text-steel mt-1">
           Pantau progres clearance tiap karyawan yang mengajukan resign.
-        </p>
-        <p className="text-xs text-steel/60 mt-2 font-mono">
-          [debug] dimuat: {new Date().toISOString()} · {cases.length} kasus ditemukan di database
         </p>
       </div>
 
@@ -37,6 +35,7 @@ export default async function DashboardPage() {
                 <th className="px-5 py-3 font-medium">Efektif Terakhir</th>
                 <th className="px-5 py-3 font-medium">Progres</th>
                 <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -67,6 +66,9 @@ export default async function DashboardPage() {
                     >
                       {c.overallDone ? 'Selesai' : 'Proses Berjalan'}
                     </span>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <DeleteCaseButton caseId={c.id} caseName={c.nama_karyawan} />
                   </td>
                 </tr>
               ))}
