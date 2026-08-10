@@ -10,58 +10,67 @@ export default async function UpdateStatusPage({ params }) {
   const clearance = await getClearanceByToken(params.token);
   if (!clearance) notFound();
 
-  const done = clearance.status === 'selesai';
-
-  // Tandai link ini sudah dibuka (kalau belum selesai & belum pernah ditandai)
-  if (!done && !clearance.dilihat_at) {
+  if (!clearance.dilihat_at) {
     await markViewed(params.token);
   }
 
-  const action = updateClearanceAction.bind(null, params.token);
+  const done = clearance.status === 'selesai';
+  const itemIds = clearance.items.map((i) => i.id);
+  const action = updateClearanceAction.bind(null, params.token, itemIds);
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-lg mx-auto">
       <p className="text-xs uppercase tracking-wide text-steel mb-2">
         {clearanceLabel(clearance.jenis)}
       </p>
       <p className="font-display text-2xl text-ink mb-1">{clearance.case.nama_karyawan}</p>
-      <p className="text-sm text-steel mb-8">
-        {clearance.case.posisi} · Efektif terakhir{' '}
-        {new Date(clearance.case.tanggal_efektif).toLocaleDateString('id-ID')}
-      </p>
+      <div className="text-sm text-steel mb-6 space-y-0.5">
+        <p>
+          NIP {clearance.case.nip || '-'} · {clearance.case.posisi}
+          {clearance.case.unit_kerja ? ` · ${clearance.case.unit_kerja}` : ''}
+        </p>
+        <p>Tanggal keluar {new Date(clearance.case.tanggal_efektif).toLocaleDateString('id-ID')}</p>
+      </div>
 
-      {done ? (
-        <div className="bg-white border border-brass/40 rounded-2xl p-6 text-center">
-          <div className="w-14 h-14 mx-auto rounded-full border-2 border-brass text-brass flex items-center justify-center text-[10px] font-semibold uppercase -rotate-6 mb-3">
-            Selesai
-          </div>
-          <p className="text-sm text-ink font-medium">Sudah ditandai selesai</p>
-          {clearance.catatan && (
-            <p className="text-xs text-steel mt-2">Catatan: &ldquo;{clearance.catatan}&rdquo;</p>
-          )}
+      {done && (
+        <div className="mb-4 text-xs font-medium text-brass bg-brass/10 border border-brass/30 rounded-lg px-3 py-2">
+          Semua item di unit ini sudah ditandai selesai. Kamu tetap bisa mengubahnya di bawah kalau perlu.
         </div>
-      ) : (
-        <form action={action} className="bg-white border border-line rounded-2xl p-6 space-y-4">
-          <p className="text-xs text-steel">
-            Konfirmasi kalau proses clearance dari pihak Anda untuk karyawan ini sudah selesai.
-          </p>
-          <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">Catatan (opsional)</label>
-            <textarea
-              name="catatan"
-              rows={3}
-              placeholder="cth. Laptop & ID card sudah dikembalikan"
-              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-ink text-white text-sm font-medium py-2.5 rounded-lg hover:opacity-90 transition"
-          >
-            Tandai Selesai
-          </button>
-        </form>
       )}
+
+      <form action={action} className="bg-white border border-line rounded-2xl p-6">
+        <p className="text-xs text-steel mb-4">
+          Centang item yang sudah selesai diproses, isi keterangan bila perlu, lalu klik Simpan.
+        </p>
+        <div className="divide-y divide-line">
+          {clearance.items.map((item) => (
+            <div key={item.id} className="py-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name={`checked_${item.id}`}
+                  defaultChecked={item.checked}
+                  className="mt-1 w-4 h-4 accent-ink shrink-0"
+                />
+                <span className="text-sm text-ink">{item.label}</span>
+              </label>
+              <input
+                type="text"
+                name={`ket_${item.id}`}
+                defaultValue={item.keterangan || ''}
+                placeholder="Keterangan (opsional)"
+                className="mt-1.5 ml-7 w-[calc(100%-1.75rem)] border border-line rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ink"
+              />
+            </div>
+          ))}
+        </div>
+        <button
+          type="submit"
+          className="w-full mt-4 bg-ink text-white text-sm font-medium py-2.5 rounded-lg hover:opacity-90 transition"
+        >
+          Simpan
+        </button>
+      </form>
     </div>
   );
 }
