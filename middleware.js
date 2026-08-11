@@ -1,29 +1,26 @@
 import { NextResponse } from 'next/server';
-import { SESSION_COOKIE, hashPassword } from '@/lib/auth';
+import { SESSION_COOKIE } from '@/lib/auth';
+import { validateSession } from '@/lib/db';
+
+const PUBLIC_PATHS = ['/login', '/forgot-password', '/reset-password'];
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
-  // Halaman ini selalu boleh diakses tanpa login:
-  // - /update/[token] -> diakses pihak terkait (atasan/IT/dst) lewat link unik
-  // - /login -> halaman login itu sendiri
-  if (pathname.startsWith('/update/') || pathname === '/login') {
+  if (pathname.startsWith('/update/') || PUBLIC_PATHS.includes(pathname)) {
     return NextResponse.next();
   }
 
-  const password = process.env.ADMIN_PASSWORD;
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
 
-  // Kalau ADMIN_PASSWORD belum diset di environment variable, jangan kunci
-  // semua orang keluar (supaya gak lockout total pas awal setup) — biarkan
-  // dashboard tetap bisa diakses sampai passwordnya di-set.
-  if (!password) {
-    return NextResponse.next();
+  let valid = false;
+  try {
+    valid = await validateSession(token);
+  } catch (err) {
+    console.error('Gagal validasi sesi:', err);
   }
 
-  const expected = await hashPassword(password);
-  const cookie = request.cookies.get(SESSION_COOKIE)?.value;
-
-  if (cookie !== expected) {
+  if (!valid) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);

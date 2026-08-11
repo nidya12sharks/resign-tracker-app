@@ -52,6 +52,29 @@ yang bisa connect ke database Postgres manapun (Neon, Supabase, dll) selama kamu
 punya connection string-nya. Tabel dibuat otomatis oleh aplikasi saat pertama kali
 diakses — tidak perlu jalankan migration manual.
 
+## Login HR & Reset Password
+
+Dashboard (`/`, `/new`, `/case/[id]`, `/settings`) dilindungi login. Halaman
+`/update/[token]` yang dibagikan ke tiap unit tetap bisa diakses langsung
+tanpa login.
+
+**Setup awal (sekali saja):**
+1. Set environment variable `ADMIN_PASSWORD` di Vercel (Settings →
+   Environment Variables) — ini jadi password login pertama kali
+2. Daftar gratis di [resend.com](https://resend.com), buat API key, lalu set
+   sebagai environment variable `RESEND_API_KEY` di Vercel — ini dipakai
+   untuk mengirim email kalau lupa password
+3. Redeploy project
+
+**Setelah login pertama kali:**
+- Buka halaman **Pengaturan** (link di kanan atas dashboard) untuk:
+  - Mengisi email HR (tempat link reset password akan dikirim kalau lupa)
+  - Mengganti password kapan saja tanpa perlu ubah environment variable lagi
+- Kalau lupa password, klik **"Lupa password?"** di halaman login — link
+  reset dikirim ke email yang sudah didaftarkan di Pengaturan
+- Environment variable `ADMIN_PASSWORD` hanya dipakai untuk membuat akun
+  pertama kali; setelah itu password disimpan & diubah lewat database
+
 ## Yang Sengaja Ditunda (Ship Early)
 
 - Notifikasi otomatis (email/WA) saat status berubah — untuk sekarang, HR

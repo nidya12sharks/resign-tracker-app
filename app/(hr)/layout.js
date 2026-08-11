@@ -16,6 +16,9 @@ export default function HrLayout({ children }) {
             >
               + Kasus Baru
             </Link>
+            <Link href="/settings" className="text-sm text-steel hover:text-ink transition">
+              Pengaturan
+            </Link>
             <form action={logoutAction}>
               <button type="submit" className="text-sm text-steel hover:text-ink transition">
                 Keluar
